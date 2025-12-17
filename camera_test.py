@@ -3,8 +3,11 @@ print("SCRIPT STARTED")
 import cv2
 
 cap = cv2.VideoCapture(0)
-
 print("Camera opened:", cap.isOpened())
+
+if not cap.isOpened():
+    print("ERROR: Could not open camera. Try changing the index to 1 or 2.")
+    exit()
 
 while True:
     ret, frame = cap.read()
