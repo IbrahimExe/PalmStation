@@ -1,86 +1,155 @@
+# snake_gesture_opencv.py
 print("SCRIPT STARTED")
 
 import cv2
 import mediapipe as mp
+import numpy as np
 import random
+import math
 import time
-from collections import deque, Counter
 
-# ------------ MediaPipe setup ------------
+# -------------------------
+# MediaPipe setup
+# -------------------------
 mp_hands = mp.solutions.hands
 mp_draw = mp.solutions.drawing_utils
+hands = mp_hands.Hands(max_num_hands=1, min_detection_confidence=0.6, min_tracking_confidence=0.6)
 
-hands = mp_hands.Hands(
-    static_image_mode=False,
-    max_num_hands=1,
-    min_detection_confidence=0.6,
-    min_tracking_confidence=0.6
-)
+cap = cv2.VideoCapture(0)
 
-# ------------ Game settings ------------
+# -------------------------
+# Game settings
+# -------------------------
 WIDTH, HEIGHT = 640, 480
 CELL = 20
 
-GRID_W = WIDTH // CELL
-GRID_H = HEIGHT // CELL
+snake = [(320, 240)]
+direction = (CELL, 0)
+food = (random.randrange(0, WIDTH, CELL),
+        random.randrange(0, HEIGHT, CELL))
 
-snake = [(GRID_W // 2, GRID_H // 2)]
-direction = (1, 0)  # grid direction: (dx, dy) in cells
-food = (random.randint(0, GRID_W - 1), random.randint(0, GRID_H - 1))
-
-move_interval = 0.12  # seconds per move
+move_interval = 0.20   # Seconds per movement step [smaller = faster moving snake]
 last_move = time.time()
 
-# ------------ Gesture smoothing ------------
-recent_gestures = deque(maxlen=7)  # collect last N gestures
-STABLE_THRESHOLD = 3  # require majority of last N to be same to change
+# -------------------------
+# Helpers: smoothing / geometry
+# -------------------------
+class AngleEMA:
+    """Exponential moving average for smoothing angles"""
+    def __init__(self, alpha=0.3): # Smoothing Factor [0 ~ 1] - If twitchy, lower to ~0.2
+        self.alpha = alpha
+        self.value = None
 
-def landmark_direction_from_landmarks(landmarks):
-    """
-    Given a mediapipe hand.landmark list, return 'up','down','left' or 'right'.
-    Uses index finger tip (8) vs index pip (5) local vector.
-    Landmarks are normalized [0..1] in x,y relative to image.
-    """
-    tip = landmarks[8]
-    base = landmarks[5]
-    dx = tip.x - base.x
-    dy = tip.y - base.y
+    def update(self, new_value):
+        if new_value is None:
+            return self.value
+        if self.value is None:
+            self.value = new_value
+        else:
+            # wrap-around safe update for angles
+            a = math.radians(self.value)
+            b = math.radians(new_value)
+            x = math.cos(b) * self.alpha + math.cos(a) * (1 - self.alpha)
+            y = math.sin(b) * self.alpha + math.sin(a) * (1 - self.alpha)
+            self.value = math.degrees(math.atan2(y, x))
+        return self.value
 
-    # choose major axis
-    if abs(dx) > abs(dy):
-        return "right" if dx > 0 else "left"
-    else:
-        return "down" if dy > 0 else "up"
+angle_filter = AngleEMA(alpha=0.35)
 
-def most_common_stable(gestures):
-    if not gestures:
+def dist(a, b):
+    return math.hypot(a.x - b.x, a.y - b.y)
+
+def palm_size(landmarks):
+    # approximate palm size using wrist (0) to middle_mcp (9)
+    return dist(landmarks[0], landmarks[9])
+
+def finger_angle_from( tip_landmark, base_landmark ):
+    # returns angle in degrees, where 0 = right, positive = up
+    dx = tip_landmark.x - base_landmark.x
+    dy = base_landmark.y - tip_landmark.y  # invert y for screen coords
+    return math.degrees(math.atan2(dy, dx))
+
+def angle_to_direction(angle):
+    if angle is None:
         return None
-    c = Counter(gestures)
-    label, count = c.most_common(1)[0]
-    if count >= STABLE_THRESHOLD:
-        return label
-    return None
+    if -45 <= angle <= 45:
+        return "right"
+    elif 45 < angle <= 135:
+        return "up"
+    elif angle > 135 or angle < -135:
+        return "left"
+    else:
+        return "down"
 
-# ------------ Helper functions ------------
 def spawn_food():
     while True:
-        p = (random.randint(0, GRID_W - 1), random.randint(0, GRID_H - 1))
+        p = (random.randrange(0, WIDTH, CELL), random.randrange(0, HEIGHT, CELL))
         if p not in snake:
             return p
 
-def grid_wrap(head):
-    return (head[0] % GRID_W, head[1] % GRID_H)
+# -------------------------
+# Gesture decision logic
+# -------------------------
+def choose_pointing_finger(landmarks):
+    """
+    Decide whether user is pointing with index or thumb.
+    Returns tuple (finger, angle) where finger is "index" or "thumb" or None.
+    Angle is the computed angle (degrees) for the chosen finger, or None.
+    Logic:
+      - compute palm size to normalize distances
+      - if index is extended -> choose index
+      - elif thumb is extended and index folded -> choose thumb (useful for thumbs-out)
+      - else -> None (no clear pointing)
+    """
+    # landmarks: list-like with attributes x,y
+    psize = palm_size(landmarks)
+    if psize == 0:
+        return None, None
 
-# ------------ Main loop ------------
-cap = cv2.VideoCapture(0)
-if not cap.isOpened():
-    print("ERROR: Could not open camera")
-    exit()
+    # distances normalized by palm size
+    index_tip = landmarks[8]
+    index_pip = landmarks[6]
+    index_mcp = landmarks[5]
+    thumb_tip = landmarks[4]
+    thumb_mcp = landmarks[2]
 
+    index_tip_to_pip = dist(index_tip, index_pip) / psize
+    index_tip_to_mcp = dist(index_tip, index_mcp) / psize
+    thumb_tip_to_mcp = dist(thumb_tip, thumb_mcp) / psize
+
+    # heuristics (tweakable)
+    INDEX_EXTENDED = 0.50    # index tip well away from pip/mcp
+    INDEX_FOLDED = 0.30      # index tip close -> folded
+    THUMB_EXTENDED = 0.45    # thumb tip distance threshold 
+                             # [0.35 ~ 0.55] Lower = Easier to trigger
+
+    # determine states
+    index_extended = (index_tip_to_mcp >= INDEX_EXTENDED)
+    index_folded = (index_tip_to_mcp <= INDEX_FOLDED)
+    thumb_extended = (thumb_tip_to_mcp >= THUMB_EXTENDED)
+
+    # prefer index if clearly extended
+    if index_extended:
+        angle = finger_angle_from(index_tip, index_mcp)
+        return "index", angle
+
+    # if index folded and thumb extended -> thumbs-out / horizontal thumb
+    if index_folded and thumb_extended:
+        angle = finger_angle_from(thumb_tip, thumb_mcp)
+        return "thumb", angle
+
+    # if thumb extended and index not strongly extended, accept thumb
+    if (thumb_extended and not index_extended):
+        angle = finger_angle_from(thumb_tip, thumb_mcp)
+        return "thumb", angle
+
+    return None, None
+
+# -------------------------
+# Main loop
+# -------------------------
 print("Starting Gesture Snake. Press 'q' in the window to quit.")
-
-running = True
-while running:
+while True:
     ret, frame = cap.read()
     if not ret:
         continue
@@ -91,43 +160,54 @@ while running:
 
     results = hands.process(rgb)
 
-    # default: keep old direction unless we get a stable new one
-    new_gesture = None
+    chosen_angle = None
+    chosen_finger = None
+
     if results.multi_hand_landmarks:
         hand = results.multi_hand_landmarks[0]
         mp_draw.draw_landmarks(frame, hand, mp_hands.HAND_CONNECTIONS)
-        new_gesture = landmark_direction_from_landmarks(hand.landmark)
-        recent_gestures.append(new_gesture)
+
+        chosen_finger, raw_angle = choose_pointing_finger(hand.landmark)
+        if raw_angle is not None:
+            chosen_angle = angle_filter.update(raw_angle)
+        # draw small label to help testing:
+        if chosen_finger:
+            cv2.putText(frame, f"Using: {chosen_finger}", (10, 60),
+                        cv2.FONT_HERSHEY_SIMPLEX, 0.7, (200,200,0), 2)
+
+    # compute gesture from smoothed angle if available
+    gesture = None
+    if chosen_angle is not None:
+        gesture = angle_to_direction(chosen_angle)
+
+    # map gesture to candidate direction (in pixels)
+    if gesture == "up":
+        candidate = (0, -CELL)
+    elif gesture == "down":
+        candidate = (0, CELL)
+    elif gesture == "left":
+        candidate = (-CELL, 0)
+    elif gesture == "right":
+        candidate = (CELL, 0)
     else:
-        # no hand detected: don't append; keep previous gestures buffer for smoothing
-        pass
+        candidate = None
 
-    stable = most_common_stable(recent_gestures)
-    if stable:
-        # map stable gesture to direction vector but prevent 180deg reversals
-        if stable == "up":
-            candidate = (0, -1)
-        elif stable == "down":
-            candidate = (0, 1)
-        elif stable == "left":
-            candidate = (-1, 0)
-        else:
-            candidate = (1, 0)
-
-        # prevent immediate 180° turn
+    # apply candidate if valid and not 180 reversal
+    if candidate:
         if (candidate[0] != -direction[0]) or (candidate[1] != -direction[1]) or len(snake) == 1:
             direction = candidate
 
-    # move snake on a timed interval
+    # move snake on timer
     now = time.time()
     if now - last_move >= move_interval:
         last_move = now
         head = (snake[0][0] + direction[0], snake[0][1] + direction[1])
-        head = grid_wrap(head)
+        head = (head[0] % WIDTH, head[1] % HEIGHT)
+
         if head in snake:
-            # reset on collision
-            snake = [(GRID_W // 2, GRID_H // 2)]
-            direction = (1, 0)
+            # reset
+            snake = [(WIDTH//2, HEIGHT//2)]
+            direction = (CELL, 0)
             food = spawn_food()
         else:
             snake.insert(0, head)
@@ -136,25 +216,20 @@ while running:
             else:
                 snake.pop()
 
-    # draw food and snake
-    # convert grid coords to pixel coords
-    fx, fy = food[0] * CELL, food[1] * CELL
+    # Draw food and snake
+    fx, fy = food
     cv2.rectangle(frame, (fx, fy), (fx + CELL, fy + CELL), (0, 0, 255), -1)
 
-    for i, (gx, gy) in enumerate(snake):
-        px, py = gx * CELL, gy * CELL
+    for i, (sx, sy) in enumerate(snake):
         color = (0, 200, 0) if i != 0 else (0, 255, 100)
-        cv2.rectangle(frame, (px, py), (px + CELL - 1, py + CELL - 1), color, -1)
+        cv2.rectangle(frame, (sx, sy), (sx + CELL - 1, sy + CELL - 1), color, -1)
 
-    # status text
-    cv2.putText(frame, f"Score: {len(snake)-1}", (10, 30),
-                cv2.FONT_HERSHEY_SIMPLEX, 0.9, (255, 255, 255), 2)
+    cv2.putText(frame, "Gesture Snake (Q to quit)", (10, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255,255,255), 2)
 
     cv2.imshow("Gesture Snake", frame)
 
-    key = cv2.waitKey(1) & 0xFF
-    if key == ord('q'):
-        running = False
+    if cv2.waitKey(1) & 0xFF == ord('q'):
+        break
 
 cap.release()
 cv2.destroyAllWindows()
