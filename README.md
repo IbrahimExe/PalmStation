@@ -8,7 +8,7 @@ A (definitely not PlayStation inspired) gesture controlled console environment w
 
 ## Overview
 
-A small, Python & AI project that demonstrates **real-time gesture recognition** using Google's MediaPipe Hands and OpenCV to open webcams!
+A small, Python & AI project that demonstrates **gesture recognition** using Google's MediaPipe Hands and OpenCV to open webcams!
 
 > ⚠️ *This is a student project built to further learn data manipulation with NumPy & Pandas, practice and understand how Artificial Intelligence actually works with neural networks (MLPs & CNNs), and how we can use Transfer Learning to edit models to better suit our final classes and needs.
 
