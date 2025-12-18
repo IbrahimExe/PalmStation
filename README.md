@@ -24,7 +24,7 @@ The optional small transfer‑learning pipeline (collect → train → use) ment
 * Real-time hand landmark detection using MediaPipe Hands
 * Gesture controlled Snake (index or thumb gestures) with smoothing and classifier support for better playing comfort
 * Gesture controlled Rock–Paper‑Scissors with stable-hold confirmation, confidence score, and result screens
-* Optional data collection and training pipeline (collect_landmarks.py → train_classifier.py)
+* Optional data collection and training pipeline (collect_data.py → train_classifier.py)
 * Easy to run in a Python virtual environment (Windows / macOS / Linux)
 
 <div align="center">
