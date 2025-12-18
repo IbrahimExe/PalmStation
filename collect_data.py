@@ -1,13 +1,14 @@
-"""
-Run and press keys to record samples:
-  r - record RIGHT
-  l - record LEFT
-  u - record UP
-  d - record DOWN
-  s - save dataset to data/gestures.csv
-  q - quit
-Aim for ~150-300 samples per class for good results (you can start with 100).
-"""
+
+# File to collect create and save my own dataset of hand gesture landmarks using MediaPipe.
+#   r - RIGHT
+#   l - LEFT
+#   u - UP
+#   d - DOWN
+#   s - Save dataset to data/gestures.csv
+#   q - Quit
+# Each recorded sample appends a row to the CSV with 42 features (x,y for 21 landmarks) + label.
+# 100 - 150 samples per gesture is a good enough size for training.
+
 import cv2
 import mediapipe as mp
 import numpy as np
