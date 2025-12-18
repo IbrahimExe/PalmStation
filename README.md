@@ -3,13 +3,15 @@ A gesture controlled environment where you can play classic games like Snake!
 
 ## Overview
 
-A pair of small, beginner-friendly projects that demonstrate **real-time gesture recognition** using MediaPipe Hands and OpenCV. The repository contains two playable demos: a gesture‑controlled Snake game and a gesture‑controlled Rock–Paper–Scissors (RPS) game. The RPS game includes an improved user experience with hold-to-confirm and result screens. An optional small transfer‑learning pipeline (collect → train → use) allows you to improve gesture accuracy by training a classifier on MediaPipe landmarks.
+A pair of small, beginner-friendly projects that demonstrate **real-time gesture recognition** using MediaPipe Hands and OpenCV.
+
+PalmStation contains two playable demos: a gesture‑controlled Snake game and a gesture‑controlled Rock–Paper–Scissors game. The RPS game includes an improved user experience with hold-to-confirm and result screens. An optional small transfer‑learning pipeline (collect → train → use) allows you to improve gesture accuracy by training a classifier on MediaPipe landmarks using data you can collect on your own!
 
 ## Features
 
 * Real-time hand landmark detection using MediaPipe Hands
-* Gesture‑controlled Snake (index or thumb gestures) with smoothing and classifier support
-* Gesture‑controlled Rock–Paper‑Scissors with stable-hold confirmation, confidence score, and result screens
+* Gesture controlled Snake (index or thumb gestures) with smoothing and classifier support
+* Gesture controlled Rock–Paper‑Scissors with stable-hold confirmation, confidence score, and result screens
 * Optional data collection and training pipeline (collect_landmarks.py → train_classifier.py)
 * Easy to run in a Python virtual environment (Windows / macOS / Linux)
 
@@ -128,18 +130,10 @@ Add screenshots, GIFs or demo videos to the `docs/` or `assets/` folder and link
 * Add better visuals, menus, sound effects and a high-score persistence layer
 * Export a web demo (WebRTC) using TensorFlow.js + MediaPipe on the browser
 
-## Contributing
-
-Contributions welcome! Fork, create a feature branch, add tests or scripts, and open a pull request. If you add a dataset or model, place it under `data/` or `models/` and add usage notes.
-
 ## Troubleshooting
 
 * If `mediapipe` import has a yellow squiggle in VS Code but the script runs, reselect the `.venv` interpreter and reload the window. Ensure the terminal is activated with `.\.venv\Scripts\Activate.ps1` on Windows.
 * If OpenCV camera doesn’t open, try different camera indices (`cv2.VideoCapture(1)`), close other apps using the camera (Zoom/Discord), and check Windows camera privacy settings.
-
-## License
-
-MIT — include a LICENSE file if you want to publish this publicly.
 
 ## Acknowledgments
 
@@ -155,8 +149,5 @@ MIT — include a LICENSE file if you want to publish this publicly.
 Thanks to the MediaPipe team, example notebooks and community tutorials that helped build this project.
 
 ---
-
-If you want, I can: 1) commit this README to your repo, 2) generate a `requirements.txt` from your current venv, or 3) create a short `docs/` page with screenshots. Tell me which one next.
-
 
 https://storage.googleapis.com/mediapipe-assets/Model%20Card%20Hand%20Tracking%20(Lite_Full)%20with%20Fairness%20Oct%202021.pdf
