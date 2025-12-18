@@ -2,7 +2,7 @@
 
 <img width="473" height="474" alt="PalmStationLogoSmall" src="https://github.com/user-attachments/assets/09026364-cb37-403b-9270-d374ee234426" />
 
-A gesture controlled console environment where you can play classic two classic games!
+A (definitely not PlayStation inspired) gesture controlled console environment where you can play two classic games!
 
 </div>
 
@@ -10,7 +10,7 @@ A gesture controlled console environment where you can play classic two classic 
 
 A small, Python & AI project that demonstrates **real-time gesture recognition** using Google's MediaPipe Hands and OpenCV to open webcams!
 
-> ⚠️ *This is a student project built to further learn data manipulation with NumPy & Pandas, practice and understand the how Artificial Intelligence actually works with neural networks (MLPs & CNNs), and how we can use Transfer Learning to edit models to better suit our final classes and needs.
+> ⚠️ *This is a student project built to further learn data manipulation with NumPy & Pandas, practice and understand how Artificial Intelligence actually works with neural networks (MLPs & CNNs), and how we can use Transfer Learning to edit models to better suit our final classes and needs.
 
 > The original model was trained in a Google Collab Notebook [Trained Collab Model Attempt](https://github.com/IbrahimExe/Kotlin_ToDoList_App), however, this build uses Google's pre-built MediaPipe model, while also allowing you, the user, to input and save your very own dataset!*
 
@@ -101,7 +101,7 @@ python train_classifier.py
 ## How it works
 
 * The system uses **MediaPipe Hands** to extract **21 hand landmarks** per detected hand (x,y normalized coordinates). These landmarks are used directly for heuristic rules (finger extended / folded) or flattened into a feature vector for training a small classifier ([RandomForest by default](https://scikit-learn.org/stable/modules/generated/sklearn.ensemble.RandomForestClassifier.html)).
-* Gesture smoothing uses an **exponential moving average (EMA)** on angles and short voting buffers to avoid flicker and accidental flips, this was done to mainly allow players to use thier thumbs to navigate smoother as well.
+* Gesture smoothing uses an **exponential moving average (EMA)** on angles and short voting buffers to avoid flicker and accidental flips, this was done to mainly allow players to use their thumbs to navigate smoother as well.
 * The RPS game implements a stable‑hold confirmation (player must hold the same pose for a short duration) and a visible result + countdown flow to prioritize the user experience.
 
 ## Model information
@@ -127,16 +127,16 @@ python train_classifier.py
 |---|---|---|---|---|---|---|---|---|---|
 | Model 1 | 64 | 16 | 4,200,811 | 2 | 0 | 0.001 | 10 | 98.40% | 98.26% |
 | Model 2 | 128 | 32 | 2,417,547 | 3 | 1 | 0.1 | 15 | 34.28% | 34.28% |
-| Model 3 | 64 | 16 | 4794739 | 3 | 1 | 0.01 | 20 | 98.97% | 99.32% |
+| Model 3 | 64 | 16 | 4,794,739 | 3 | 1 | 0.01 | 20 | 98.97% | 99.32% |
 
 ## Challenges & Solutions
 
-* Python version compatability - Newer Python versions (13 and >) pose issues when using models, as they are usually built on older versions of Python.
+* Python version compatibility - Newer Python versions (3.12+) pose issues when using models, as they are usually built on older versions of Python.
 * **Mediapipe / wheel compatibility:** fixed by using Python 3.11 and the mediapipe 0.10.21 wheel on Windows.
 * **Gesture jitter & misclassification:** solved with EMA smoothing, majority voting, and an optional transfer‑learning classifier trained on user‑collected landmarks.
 * **Thumb vs index pointing:** resolved with a simple heuristic that compares normalized distances relative to palm size (thumb & index selection logic).
-* **Datasets Used:** Both datasets used were relativley small, this allowed training to be quick, however, at the cost of accuracy and high amounts of loss.
-* Particullarly with the Rock Paper Scissors dataset, as the data had the palms on a greenscreen, but a webcam would usually not have just a palm and greenscreen being recorded.
+* **Datasets Used:** Both datasets used were relatively  small, this allowed training to be quick, however, at the cost of accuracy and high amounts of loss.
+* Particularly with the Rock Paper Scissors dataset, as the data had the palms on a greenscreen, but a webcam would usually not have just a palm and greenscreen being recorded.
 * This meant it was just better and more efficient to use the pre-trained MediaPipe model.
 
 ## Future improvements
