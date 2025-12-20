@@ -1,8 +1,8 @@
 <div align="center">
+  
+<img width="600" height="600" alt="PalmStationLogo" src="https://github.com/user-attachments/assets/5b85ddbb-dcb2-430d-898c-0310dd9e2526" />
 
-<img width="473" height="474" alt="PalmStationLogoSmall" src="https://github.com/user-attachments/assets/09026364-cb37-403b-9270-d374ee234426" />
-
-A (definitely not PlayStation inspired) gesture controlled console environment where you can play two classic games!
+A (definitely not PlayStation inspired) gesture controlled console environment where you can play classic games!
 
 </div>
 
@@ -10,7 +10,7 @@ A (definitely not PlayStation inspired) gesture controlled console environment w
 
 A small, Python & AI project that demonstrates **gesture recognition** using Google's MediaPipe Hands and OpenCV to open webcams!
 
-> ⚠️ *This is a student project built to further learn data manipulation with NumPy & Pandas, practice and understand how Artificial Intelligence actually works with neural networks (MLPs & CNNs), and how we can use Transfer Learning to edit models to better suit our final classes and needs.
+> *This is a student project built to further learn data manipulation with NumPy & Pandas, practice and understand how Artificial Intelligence actually works with neural networks (MLPs & CNNs), and how we can use Transfer Learning to edit models to better suit our final classes and needs.
 
 > The original model was trained in a Google Collab Notebook [Trained Collab Model Attempt](https://github.com/IbrahimExe/Kotlin_ToDoList_App), however, this build uses Google's pre-built MediaPipe model, while also allowing you, the user, to input and save your very own dataset!*
 
