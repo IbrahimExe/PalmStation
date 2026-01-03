@@ -1,26 +1,15 @@
-# rps_gesture_improved.py
-"""
-Gesture-based Rock-Paper-Scissors (improved UX)
-- Slower, clearer round flow
-- Shows heuristic "confidence" for predicted gesture
-- Shows AI choice, result, pauses so player can see outcome
-- "Get Ready" countdown before next round
-- Uses MediaPipe hands landmarks (heuristic detection)
-Run with: python rps_gesture_improved.py
-"""
-
 import cv2
 import mediapipe as mp
 import time
 import random
 import math
 
-# -------- Settings (tweakable) ----------
-STABLE_DURATION = 0.9      # seconds candidate must persist to accept (increase for more stability)
+# -------- Settings ----------
+STABLE_DURATION = 0.9      # seconds candidate must persist to accept
 RESULT_PAUSE = 2.5         # seconds to show result screen
 GET_READY_SECONDS = 3      # countdown seconds before new round
-PALM_SCALE_FACTOR = 0.45   # sensitivity to detect extended fingers (0.35 - 0.6)
-LOOP_WAIT_MS = 30          # main loop sleep (ms) for cv2.waitKey
+PALM_SCALE_FACTOR = 0.45   # sensitivity to detect extended fingers
+LOOP_WAIT_MS = 30          # main loop wait time
 
 # -------- MediaPipe ----------
 mp_hands = mp.solutions.hands
@@ -244,7 +233,7 @@ while True:
     # footer help
     cv2.putText(frame, "Press 'q' to quit", (10,h-10), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (180,180,180), 1)
 
-    cv2.imshow("RPS Gesture (Improved UX)", frame)
+    cv2.imshow("RPS Gesture", frame)
     key = cv2.waitKey(LOOP_WAIT_MS) & 0xFF
     if key == ord('q'):
         break

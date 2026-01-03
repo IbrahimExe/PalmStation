@@ -11,14 +11,14 @@ from collections import deque, Counter
 import joblib
 import os
 
-# ------------ config ------------
+# Config
 MODEL_PATH = "models/gesture_model.joblib"
 ENCODER_PATH = "models/label_encoder.joblib"
 CONF_THRESH = 0.70       # minimum classifier probability to accept prediction
 VOTE_LEN = 5             # majority vote window for classifier predictions
 move_interval = 0.20     # seconds per move (adjustable with +/- during play)
 
-# ------------ load model if present ------------
+# Load users custom model if its there 
 clf = None
 le = None
 if os.path.exists(MODEL_PATH) and os.path.exists(ENCODER_PATH):
@@ -38,7 +38,7 @@ if not cap.isOpened():
     print("ERROR: Could not open camera")
     exit()
 
-# ------------ Game settings ------------
+# Game settings 
 WIDTH, HEIGHT = 640, 480
 CELL = 20
 GRID_W = WIDTH // CELL
@@ -50,7 +50,7 @@ food = (random.randrange(0, GRID_W), random.randrange(0, GRID_H))
 
 last_move = time.time()
 
-# ------------ smoothing & helpers ------------
+# Smoothing & helpers for angle method
 class AngleEMA:
     def __init__(self, alpha=0.35):
         self.alpha = alpha
@@ -104,7 +104,7 @@ def spawn_food():
         if p not in snake:
             return p
 
-# ---------- functions needed by choose_pointing_finger ----------
+# Functions needed by choose_pointing_finger 
 def dist(a, b):
     return math.hypot(a.x - b.x, a.y - b.y)
 
@@ -117,9 +117,8 @@ def finger_angle_from(tip_landmark, base_landmark):
     dy = base_landmark.y - tip_landmark.y  # invert y for screen coords
     return math.degrees(math.atan2(dy, dx))
 
-# -------------------------
+
 # Gesture decision logic
-# -------------------------
 def choose_pointing_finger(landmarks):
     """
     Decide whether user is pointing with index or thumb.
@@ -141,7 +140,7 @@ def choose_pointing_finger(landmarks):
     index_tip_to_mcp = dist(index_tip, index_mcp) / psize
     thumb_tip_to_mcp = dist(thumb_tip, thumb_mcp) / psize
 
-    # heuristics (tweakable)
+    # Tweakable heuristics
     INDEX_EXTENDED = 0.50    # index tip well away from pip/mcp
     INDEX_FOLDED = 0.30      # index tip close -> folded
     THUMB_EXTENDED = 0.45    # thumb tip distance threshold
@@ -167,7 +166,7 @@ def choose_pointing_finger(landmarks):
 
     return None, None
 
-# ------------ main loop ------------
+# Main loop
 print("Starting Gesture Snake. Keys: q quit, +/- change speed.")
 while True:
     ret, frame = cap.read()
@@ -188,7 +187,7 @@ while True:
         hand = results.multi_hand_landmarks[0]
         mp_draw.draw_landmarks(frame, hand, mp_hands.HAND_CONNECTIONS)
 
-        # 1) classifier path (preferred if model exists)
+        # classifier path
         if clf is not None:
             feats = landmarks_to_features(hand.landmark)
             try:
@@ -209,7 +208,7 @@ while True:
                 # prediction failed; fall back
                 classifier_conf = 0.0
 
-        # 2) fallback: angle method using chosen finger (index or thumb)
+        # fallback: angle method using chosen finger (index or thumb)
         if chosen_gesture is None:
             chosen_finger, raw_angle = choose_pointing_finger(hand.landmark)
             if raw_angle is not None:
@@ -257,7 +256,7 @@ while True:
             else:
                 snake.pop()
 
-    # draw food & snake (pixel coords)
+    # Draw food & snake (pixel coords)
     fx, fy = food[0]*CELL, food[1]*CELL
     cv2.rectangle(frame, (fx, fy), (fx+CELL, fy+CELL), (0,0,255), -1)
     for i, (gx, gy) in enumerate(snake):
@@ -268,9 +267,9 @@ while True:
     # HUD: score, speed, classifier confidence
     cv2.putText(frame, f"Score: {len(snake)-1}", (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.8, (255,255,255), 2)
     cv2.putText(frame, f"Speed: {move_interval:.2f}s", (10, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200,200,200), 2)
-    cv2.putText(frame, f"Model conf: {classifier_conf:.2f}", (10, 75), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200,200,0), 2)
+    #cv2.putText(frame, f"Model conf: {classifier_conf:.2f}", (10, 75), cv2.FONT_HERSHEY_SIMPLEX, 0.6, (200,200,0), 2)
 
-    cv2.imshow("Gesture Snake (Classifier+Angle+Thumb)", frame)
+    cv2.imshow("Gesture Snake", frame)
 
     key = cv2.waitKey(1) & 0xFF
     if key == ord('q'):
